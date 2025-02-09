@@ -1,24 +1,24 @@
 import torch.nn as nn
-import torch
-import scipy
-import numpy as np
-from generate_data import GenerateData
 
 class Model(nn.Module):
-
-  def __init__(self):
+  
+  def __init__(self, input_size=5, hidden_size=16, num_layers=2, dropout=0.1, output_size=3):
+    """
+    Simple LSTM network, sequence -> offsets (x, y, z)
+    """
     super(Model, self).__init__()
     
-    a = GenerateData()
-    a.get_positions()
-    data = a.convert_positions()
-
-    data = torch.from_numpy(data).float()
-
-    self.rnn = nn.RNN(input_size=3,
-                      hidden_size=3,
-                      num_layers=5,
-                      batch_first=True)
-
-if __name__ == "__main__":
-  model = Model()
+    self.lstm = nn.LSTM(
+      input_size, 
+      hidden_size, 
+      num_layers=num_layers,
+      batch_first=True, 
+      dropout=dropout)
+    
+    self.fc = nn.Linear(hidden_size, output_size)
+    
+  def forward(self, x):
+    # x shape: (batch, seq_len, input_size)
+    lstm_out, _ = self.lstm(x)  # lstm_out: (batch, seq_len, hidden_size)
+    out = self.fc(lstm_out)     # out: (batch, seq_len, output_size)
+    return out
