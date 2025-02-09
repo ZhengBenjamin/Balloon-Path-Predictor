@@ -5,6 +5,7 @@ import openmeteo_requests
 import requests_cache
 import pandas as pd
 import numpy as np
+import math
 
 import json
 import urllib
@@ -14,8 +15,11 @@ class GetData:
 
   def __init__(self):
     self.windborne_url = "http://a.windbornesystems.com/treasure/"
-    self.balloon_pos = defaultdict(list)
+    self.balloon_pos = {}
     self.missing = []
+
+    for i in range(1000):
+      self.balloon_pos[i] = []
 
     self.openmeteo_url = "https://api.open-meteo.com/v1/forecast"
     cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
@@ -26,7 +30,7 @@ class GetData:
 
   def get_positions(self):
 
-    for i in range(23, -1, -1):
+    for i in range(2, -1, -1):
       print(f"Getting data for hour {i}")
       try:
         with urllib.request.urlopen(self.windborne_url + ((("0" + str(i)) if i < 10 else str(i)) + ".json")) as response:
@@ -41,14 +45,17 @@ class GetData:
 
           for balloon_index, line in enumerate(data):
             self.balloon_pos[balloon_index].append(line)
+            for obj in line:
+              if math.isnan(obj):
+                self.balloon_pos[balloon_index][-1] = [0, 0, 0]
 
       except Exception as e:
         print(f"An unexpected error occurred: {str(e)}")
-        self.missing.append(i)
+        self.missing.append(23 - i)
         for balloons in self.balloon_pos.keys():
           self.balloon_pos[balloons].append(None)
 
-  def get_weather_data(self, longitude, latitude, elevation, future, past):
+  def get_weather_data(self, latitude, longitude, elevation, future, past):
 
     pressure_levels = [1000, 975,	950, 925,	900, 850,	800, 700,	600, 500,	400, 300,	250, 200,	150, 100, 70, 50, 30]
     elevation * 1000
