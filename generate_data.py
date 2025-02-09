@@ -73,7 +73,7 @@ class GenerateData:
 
     # Generate input vectors
     for balloon_index, balloon in enumerate(self.balloon_pos):
-      print("Generating for balloon ", balloon)
+      print("Generating for balloon, Getting weather data from OpenMeteo", balloon)
       prev_coords = self.balloon_pos[balloon][0] # Prev X, Y, Z
       wind_data = self.loader.get_weather_data(prev_coords[0], prev_coords[1], prev_coords[2], 0, 24)
       wind_speed = wind_data[0]
