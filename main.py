@@ -1,5 +1,6 @@
 from model import Model
 from generate_data import GenerateData
+from plots import Plots
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
@@ -11,10 +12,10 @@ scaler_x = None
 scaler_y = None
 
 def load_and_preprocess_data():
-  """
-  Load data and preprocess it for training.
-  """
+  """Load data and preprocess it for training."""
+
   data = GenerateData()
+  data.interpolate_missing()
   x, y = data.gen_vectors()  
 
   x = np.transpose(x, (1, 0, 2))  # (batch, seq_len, 5)
@@ -120,18 +121,37 @@ def main():
   # Train:
   epochs = 3000
   lr = 0.0005
-  train_model(model, train_loader, test_loader, epochs, lr, device)
+  train_model(model, train_loader, test_loader, epochs, lr, device) # Comment out if use pre-trained model
+
+  model.load_state_dict(torch.load('model.pth'))
   
   # Eval:
-  for i in range(5):
-    sample_input = x_test[i].cpu().numpy()  # shape: (seq_len, 5)
-    unscaled_prediction = evaluate_unscaled(model, sample_input, scaler_y, device)
+  sample_input = x_test[0].cpu().numpy()  # shape: (seq_len, 5)
+  unscaled_prediction = evaluate_unscaled(model, sample_input, scaler_y, device)
+
+  print(f"Pred: {unscaled_prediction[0][:5]}")
   
-    print(f"Pred: {unscaled_prediction[0][:5]}")
-    
-    y_sample = y_test[i].cpu().numpy().reshape(-1, 3)
-    unscaled_ground_truth = scaler_y.inverse_transform(y_sample).reshape(y_test[0].shape)
-    print(f"Sampled: {unscaled_ground_truth[:5]}")
+  y_sample = y_test[0].cpu().numpy().reshape(-1, 3)
+  actual = scaler_y.inverse_transform(y_sample).reshape(y_test[0].shape)
+  print(f"Sampled: {actual[:5]}")
+
+
+  sample_indices = [0, 1, 2]
+  predictions = []
+  actual_vals = []
+  for i in sample_indices:
+      # Call model
+      sample_input = x_test[i].cpu().numpy()  # shape: (seq_len, 5)
+      prediction = evaluate_unscaled(model, sample_input, scaler_y, device)  # shape: (seq_len, 3)
+      predictions.append(prediction)
+
+      # Actual vals
+      y_sample = y_test[i].cpu().numpy().reshape(-1, 3)
+      actual = scaler_y.inverse_transform(y_sample).reshape(y_test[i].shape)
+      actual_vals.append(actual)
+
+  plotter = Plots(model, x_test, y_test, scaler_x, scaler_y, device)
+  plotter.generate_path_plots(num_samples=3)
 
 if __name__ == "__main__":
   main()

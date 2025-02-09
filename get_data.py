@@ -18,7 +18,7 @@ class GetData:
     self.balloon_pos = {}
     self.missing = []
 
-    for i in range(1000):
+    for i in range(700):
       self.balloon_pos[i] = []
 
     self.openmeteo_url = "https://api.open-meteo.com/v1/forecast"
@@ -30,7 +30,7 @@ class GetData:
 
   def get_positions(self):
 
-    for i in range(2, -1, -1):
+    for i in range(23, -1, -1):
       print(f"Getting data for hour {i}")
       try:
         with urllib.request.urlopen(self.windborne_url + ((("0" + str(i)) if i < 10 else str(i)) + ".json")) as response:
@@ -43,7 +43,8 @@ class GetData:
           except json.JSONDecodeError as e:
             print(f"JSON decode error: {e}")
 
-          for balloon_index, line in enumerate(data):
+          for balloon_index in range(700):
+            line = data[balloon_index]
             self.balloon_pos[balloon_index].append(line)
             for obj in line:
               if math.isnan(obj):

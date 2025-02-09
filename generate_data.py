@@ -66,7 +66,7 @@ class GenerateData:
     Output vector = 12 hours, 3 outputs (x, y, z)
     """
 
-    input_cutoff = int((len(self.balloon_pos[0]) / 2) + (len(self.balloon_pos[0]) / 4))
+    input_cutoff = int((len(self.balloon_pos[0]) / 2))
 
     input = np.zeros((input_cutoff, len(self.balloon_pos), 5))
     output = np.zeros((len(self.balloon_pos[0]) - input_cutoff, len(self.balloon_pos), 3))
@@ -75,7 +75,7 @@ class GenerateData:
     for balloon_index, balloon in enumerate(self.balloon_pos):
       print("Generating for balloon ", balloon)
       prev_coords = self.balloon_pos[balloon][0] # Prev X, Y, Z
-      wind_data = self.loader.get_weather_data(prev_coords[0], prev_coords[1], prev_coords[2], 0, 12)
+      wind_data = self.loader.get_weather_data(prev_coords[0], prev_coords[1], prev_coords[2], 0, 24)
       wind_speed = wind_data[0]
       wind_dir = wind_data[1]
       
@@ -85,8 +85,9 @@ class GenerateData:
         input[hour_index, balloon_index, 1] = data_point[1] # Y
         input[hour_index, balloon_index, 2] = data_point[2] # Z
 
-        if abs(data_point[0] - prev_coords[0]) > 0.5 or abs(data_point[1] - prev_coords[1]) > 0.5 or abs(data_point[2] - prev_coords[2]) > 2.5:
-          wind_data = self.loader.get_weather_data(data_point[0], data_point[1], data_point[2], 0, 12)
+        # I only got a limited number of API calls :( In an ideal world you would update wind data more often (or get that data from the balloon)
+        if abs(data_point[0] - prev_coords[0]) > 1 or abs(data_point[1] - prev_coords[1]) > 1 or abs(data_point[2] - prev_coords[2]) > 3:
+          wind_data = self.loader.get_weather_data(data_point[0], data_point[1], data_point[2], 0, 24)
           wind_speed = wind_data[0]
           wind_dir = wind_data[1]
 
@@ -107,7 +108,6 @@ class GenerateData:
         output[hour_index - input_cutoff, balloon_index, 0] = prev_coords[0] - data_point[0] # X offset
         output[hour_index - input_cutoff, balloon_index, 1] = prev_coords[1] - data_point[1] # Y offset 
         output[hour_index - input_cutoff, balloon_index, 2] = prev_coords[2] - data_point[2] # Z offset 
-        prev_coords = data_point
 
     print(input.shape, output.shape)
     print(input)
@@ -116,7 +116,8 @@ class GenerateData:
     np.save("input.npy", input)
     np.save("output.npy", output)
 
-if __name__ == "__main__":
-  get_position = GenerateData()
-  get_position.interpolate_missing()
-  get_position.gen_vectors()
+    # input = np.load("input.npy")
+    # output = np.load("output.npy")
+
+    return input, output
+
